@@ -15,7 +15,7 @@ The first transaction is the commit transaction. Its message field contains a Tr
 
 The second transaction is the reveal transaction. Its message field contains the same statement, salt and address but this time it is not hashed. 
 
-To check the Proof Bob looks at the Reveal Transaction, from the message he gets the target address of the Commit which he can use it to find the Commit Transaction, he can now apply SHA256 to the message of the Reveal Transaction and comapre it to the message of the Commit transaction, if they are equal he can be sure that Alice already knew the Statement "S" and Salt at the time she made the Commit transaction.
+To check the Proof Bob looks at the Reveal Transaction, from the message he gets the target address of the Commit, which he can use to find the Commit Transaction, he can now apply SHA256 to the message of the Reveal Transaction and comapre it to the message of the Commit transaction, if they are equal he can be sure that Alice already knew the Statement "S" and Salt at the time she made the Commit transaction.
 
 ## Why use IOTA
 The Tangle gives the ability to store small amounts of data on an immutable ledger for free. This means that once the Commit transaction is attached there is no way for Alice to change its content at a later stage, making the commit binding.
