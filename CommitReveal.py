@@ -13,180 +13,177 @@ import string
 
 class CommitRevealCheck(object):
 
+    #global variables
+
     NodeURL = "" 
 
     Seed = ""
 
-    RevealAddress = ""
-
-    Tag = ""
+    TargetAddress = ""
 
     API = None
 
     ToReveal = ""
 
-    def __init__(self, _url, _seed, _targetAddress, _tag):
+
+
+    #init class and IOTA API
+    def __init__(self, _url, _seed, _targetAddress):
 
         self.NodeURL = _url
         self.Seed = _seed
-        self.RevealAddress = _targetAddress
-        self.Tag = _tag
+        self.TargetAddress = _targetAddress
 
         self.API = Iota(_url)
 
 
-    def commitSignal(self, _signal):
 
-        print "Preparing for commit: "
+    # function which generates the encrypted hash of the information to commit 
+    def generateCommitHash(self, _statement, _salt):
 
-        salt = ''.join(random.choice(string.ascii_uppercase) for _ in range(9))
+        TrytesStatement = TryteString.from_string(_statement)
 
-        commitAddress = ''.join(random.choice(string.ascii_uppercase) for _ in range(81))
+        StatementLen = len(TrytesStatement)
 
-        reveal = _signal + "9" + salt + "9" + commitAddress
+        # the format requires that the first 4 chars have the char length of the statement 
+        if StatementLen <= 9:
 
+            #if less than 9 than TryteString has only 2 chars, add 99 to get to 4
+            SignalLenInTrytes = TryteString.from_bytes(bytes(StatementLen)) + "99"
+
+        elif StatementLen <= 99 :
+
+            #if between 9 and 99 TryteString has 4 chars
+            SignalLenInTrytes = TryteString.from_bytes(bytes(StatementLen))
+
+        #not more than 99 Trytes 
+        else:
+            raise ValueError('Statement String needs to be less than 99 Trytes!')
+
+        #generate plain string 
+        reveal = str(SignalLenInTrytes + "9" + TrytesStatement + "9" + _salt)
+
+        #store for reveal
         self.ToReveal = reveal
 
-
+        #encrypt/hash string
         commit = hashlib.sha256(reveal).hexdigest()
 
+        #make into Trytes 
         commitInTryts = TryteString.from_bytes(commit)
 
-        self.Transact(commitInTryts, commitAddress,None)
+        return commitInTryts
+
+
+
+    def commitSignal(self, _signal):
+
+        print "\nPreparing for new commit: "
+
+        #generate random single-use salt
+        salt = ''.join(random.choice(string.ascii_uppercase) for _ in range(9))
+
+        #use salt to generate the Hash
+        TrytesToCommit = self.generateCommitHash(_signal, salt)
+
+        #make IOTA transaction to store commit on Tangle and get bundle
+        revealBundle = str( self.Transact(TrytesToCommit, self.TargetAddress , "COMMIT") )
+
+        return revealBundle
+
 
 
     def RevealSignal(self):
 
         print "Preparing reveal: "
 
-        revealBundle = str(self.Transact(self.ToReveal, self.RevealAddress, self.Tag))
+        #get plain reveal string and store it on Tangle
+        revealBundle = str(self.Transact(self.ToReveal, self.TargetAddress, "REVEAL"))
 
         print "Reveal Bundle: " + revealBundle
 
         return revealBundle
 
 
+
     def Transact(self, _message , _addr, _tag):
+
         # preparing transactions
         transfers = ProposedTransaction(address = Address(_addr), # 81 trytes long address
                               message = _message,
                               tag     = _tag, # Up to 27 trytes
                               value   = 0)
-
-        bundle = ProposedBundle(transactions=[transfers]) # list of prepared transactions is needed at least
-
+         # list of prepared transactions is needed at least
+        bundle = ProposedBundle(transactions=[transfers])
 
         # generate bundle hash using sponge/absorb function + normalize bundle hash + copy bundle hash into each transaction / bundle is finalized
         bundle.finalize()
 
-        gta = self.API.get_transactions_to_approve(depth=3) # get tips to be approved by your bundle
+        # get tips to be approved by your bundle
+        gta = self.API.get_transactions_to_approve(depth=3) 
 
-        Trytes = bundle.as_tryte_strings() # bundle as trytes
+        # bundle as trytes
+        Trytes = bundle.as_tryte_strings()
 
         print "SENDING...."
 
+        #attach Tip to Tangle
         tip = self.API.attach_to_tangle(trunk_transaction=gta['trunkTransaction'], # first tip selected
                            branch_transaction=gta['branchTransaction'], # second tip selected
                            trytes=Trytes, # our finalized bundle in Trytes
                            min_weight_magnitude=14) # MWMN
 
-
+        #breadcast Tip to Network 
         res = self.API.broadcast_and_store(tip['trytes'])
 
+        #return bundle hash
         return bundle.hash
 
 
-    def GetLastTXFromAddress(self, _address):
 
-        allTransactions = self.API.find_transactions(addresses = [_address])
+    def CheckReveal(self, _bundleCommit, _bundleReveal):
 
-        lastTrytes = self.API.get_trytes(hashes = allTransactions["hashes"])
+        #get reveal transaction object from Tangle
+        bundleHash = self.API.find_transactions(bundles=[_bundleReveal])
+        lastTrytes = self.API.get_trytes(hashes = bundleHash["hashes"])
+        transaction = Transaction.from_tryte_string(trytes = lastTrytes["trytes"][0])
 
-        newestTx = None
+        #get message from transaction
+        message = transaction.signature_message_fragment
 
-        newestTxTsmp = 0
+        #get the length of the statement from first 4 chars 
+        statementLength = TryteString.decode(message[  : 4])
 
-        for transaction in lastTrytes["trytes"]:
+        #get statement from message
+        signal = str(TryteString.decode(message[5 : 5 + int(statementLength)]))
 
-            tx = Transaction.from_tryte_string(trytes = transaction)
+        #get salt from message
+        salt = str(message[6 + int(statementLength) : 6 + int(statementLength) + 9])
 
-            if tx.timestamp > newestTxTsmp:
-                newestTx = tx
-                newestTxTsmp = tx.timestamp
-
-
-        return newestTx
-
-
-
-    def CheckReveal(self, _bundle):
-
-        if _bundle == None:
-            transaction = self.GetLastTXFromAddress(self.RevealAddress)
-        else :
-            bundleHash = self.API.find_transactions(bundles=[_bundle])
-            lastTrytes = self.API.get_trytes(hashes = bundleHash["hashes"])
-            transaction = Transaction.from_tryte_string(trytes = lastTrytes["trytes"][0])
-
-        message = str(transaction.signature_message_fragment)
-
-        signal = ""
-
-        signalStop = 0
-
-        for i,c in enumerate(message):
-
-            if c != "9":
-                signal = signal + c
-            else:
-                signalStop = i 
-                break;
-
-        salt = message[signalStop + 1 : signalStop + 10]
-
-        address = message[signalStop + 11 : signalStop + 92]
-
+        #print results
         print "Revealed Data: "
         print "  Signal: " + signal
         print "  Salt: " + salt
-        print "  Address: " + address
 
-        reveal = signal + "9" + salt + "9" + address
+        #use retrieved values to generate hash again
+        ResultHash = self.generateCommitHash(signal, salt)
 
-        Result = TryteString.from_bytes( hashlib.sha256(reveal).hexdigest() ) 
+        print "Resulting Hash: " + str(ResultHash)
 
-        print "Resulting Hash: " + str(Result)
-
-        commited = self.API.find_transactions(addresses = [address])
+        #get commit transaction from Tangle
+        commited = self.API.find_transactions(bundles = [_bundleCommit])
         commitedTrytes = self.API.get_trytes(hashes = commited["hashes"])
         commitedTransaction = Transaction.from_tryte_string(trytes = commitedTrytes["trytes"][0])
+
+        #get commited message
         commitedMessage = str(commitedTransaction.signature_message_fragment[ :128])
 
         print "Commited Hash: " + str( commitedMessage )
 
         print "Commited on: " + str(datetime.fromtimestamp( commitedTransaction.timestamp))
 
-        print "Is Equal: " + str( commitedMessage == Result )
+        #check if commited message is equal message generated from revealed data 
+        print "Is Equal to Commit: " + str( commitedMessage == ResultHash )
 
 
 
-
-
-
-
-
-
-comm = CommitRevealCheck("https://potato.iotasalad.org:14265",
-                        "HGW9HB9LJPYUGVHNGCPLFKKPNZAIIFHZBDHKSGMQKFMANUBA9SMSV9TAJSSMPRZZU9SFZULXKJ9YLAIUA",
-                         "CXDUYK9XGHC9DTSPDMKGGGXTIARSRVAFGHJOCDDH9ADLVBBOEHLICHTMGKVDOGRU9TBESJNHAXYPVJ999",
-                          "COMMIT9REVEAL9")
-
-comm.commitSignal("SOMEMESSAGE")
-
-time.sleep(20)
-
-bd = comm.RevealSignal()
-
-time.sleep(2)
-
-comm.CheckReveal(bd)
