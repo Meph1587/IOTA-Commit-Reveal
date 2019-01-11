@@ -11,11 +11,11 @@ Commit-Reveal is done in two Steps:
 ## How is it Implemented?
 To implement Commit-Reveal using IOTA we need to make 2 0-value transactions.
 
-The first transaction is the commit transaction. Its message field contains a Tryte String of a SHA256 hash of: The Statement "S", a random 9 charachter Salt String and the target address of the transaction. This Tryte Strign is always 128 Tryts long.
+The first transaction is the commit transaction. Its message field contains a Tryte String of a SHA256 hash of: The Statement "S"(converted from string type to TryteString type) and a random 9 charachter Salt String. This Tryte Strign is always 128 Tryts long, beacuse the SHA256 returns a 64 Bytes long string and IOTA encodes every Byte with 2 Trytes.
 
-The second transaction is the reveal transaction. Its message field contains the same statement, salt and address but this time it is not hashed. 
+The second transaction is the reveal transaction. Its message field contains the same statement and salt but this time it is not hashed. 
 
-To check the Proof Bob looks at the Reveal Transaction, from the message he gets the target address of the Commit, which he can use to find the Commit Transaction, he can now apply SHA256 to the message of the Reveal Transaction and comapre it to the message of the Commit transaction, if they are equal he can be sure that Alice already knew the Statement "S" and Salt at the time she made the Commit transaction.
+To check the Proof Bob looks at the Reveal Transaction to get the unhashed statement and salt he can now apply SHA256 to the message of the Reveal Transaction and comapre it to the message of the Commit transaction, if they are equal he can be sure that Alice already knew the Statement "S" and Salt at the time she made the Commit transaction.
 
 ## Why use IOTA
 The Tangle gives the ability to store small amounts of data on an immutable ledger for free. This means that once the Commit transaction is attached there is no way for Alice to change its content at a later stage, making the commit binding.
