@@ -21,6 +21,11 @@ while True:
     if rnd < 25:
 
         BundleCommit = comm.commitSignal("RandomNoise")
+        
+    else :
+        
+        BundleCommit = comm.commitSignal("AccualSecretCommit")
+        
 
     # wait some time before reveal
     time.sleep(20)
