@@ -8,6 +8,7 @@ comm = CommitRevealCheck(
     "CXDUYK9XGHC9DTSPDMKGGGOOOARSRVAFGHJOCDDH9ADLVBBOEHLICHTMGKVDOGRU9TBESJNHAXYPVJ999"
     )
 
+print "Connection established, starting commits..."
 
 while True:
 
