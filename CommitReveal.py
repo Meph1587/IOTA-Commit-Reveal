@@ -23,7 +23,7 @@ class CommitRevealCheck(object):
 
     API = None
 
-    ToReveal = ""
+    ToReveal = "EMPTY"
 
 
 
@@ -87,7 +87,7 @@ class CommitRevealCheck(object):
         TrytesToCommit = self.generateCommitHash(_signal, salt)
 
         #make IOTA transaction to store commit on Tangle and get bundle
-        revealBundle = str( self.Transact(TrytesToCommit, self.TargetAddress , "COMMIT") )
+        revealBundle = str( self.Transact(TrytesToCommit, self.TargetAddress , "DNT9COMMIT") )
 
         return revealBundle
 
@@ -98,7 +98,7 @@ class CommitRevealCheck(object):
         print "Preparing reveal: "
 
         #get plain reveal string and store it on Tangle
-        revealBundle = str(self.Transact(self.ToReveal, self.TargetAddress, "REVEAL"))
+        revealBundle = str(self.Transact(self.ToReveal, self.TargetAddress, "DNT9REVEAL"))
 
         print "Reveal Bundle: " + revealBundle
 
@@ -184,6 +184,10 @@ class CommitRevealCheck(object):
 
         #check if commited message is equal message generated from revealed data 
         print "Is Equal to Commit: " + str( commitedMessage == ResultHash )
+
+
+
+
 
 
 
