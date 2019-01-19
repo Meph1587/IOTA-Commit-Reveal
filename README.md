@@ -13,7 +13,7 @@ Alice can now proof she had knowledge/possession of S at time T by using the rev
 ## How is it Implemented?
 To implement Commit-Reveal using IOTA we need to make 2 0-value transactions.
 
-First we need to make the Commit Transaction, here the hashed message+key is broadcatsed to the network, where it is immutably stored. After some time, once we are ready to reveal the secret we make the Reveal Transaction to the same address. This time the message and key are not hashed. To check the proof we go to the original Commit Transaction and compare it to the hash of the message and key of the Reveal transaction. If the match, bothe message and key need to have been known at the time the Commit Transaction was done. 
+First we need to make the Commit Transaction (signed with our Private Key), here the hashed message+key is broadcatsed to the network, where it is immutably stored. After some time, once we are ready to reveal the secret we make the Reveal Transaction to the same address. This time the message and key are not hashed. To check the proof we go to the original Commit Transaction and compare it to the hash of the message and key of the Reveal transaction. If they match, both message and key need to have been known at the time the Commit Transaction was done. 
 
 Given that IOTA works with Ternary both the message and the key need to first be encoded into a string of Trytes. 
 
