@@ -5,8 +5,9 @@ Python Implementation of the Commit Reveal Scheme Using IOTA
 ## What is Commit Reveal?
 Commit-Reveal is a Cryptographic primitive which allows user Alice to proof knowledge/posession of a statement "S" at time "T" without giving away any information about statement "S". 
 Commit-Reveal is done in two Steps: 
-- the commit phase at time "T" in which Alice commits the encrypted statement 
-- the reveal phase at time "T+1" in which Alice reveals the statement and the key to Proof that the revealed statement is the    same as the commited one
+- the commit phase at time "T" in which Alice commits an signs the encrypted statement 
+- the reveal phase at time "T+1" in which Alice reveals the statement and the encryption-key
+Alice can now proof she had knowledge/posession of S at time T by regenerating the hash initially commited
 
 ## How is it Implemented?
 To implement Commit-Reveal using IOTA we need to make 2 0-value transactions.
