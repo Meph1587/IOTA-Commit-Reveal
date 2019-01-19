@@ -7,6 +7,7 @@ Commit-Reveal is a Cryptographic primitive which allows user Alice to proof know
 Commit-Reveal is done in two Steps: 
 - the commit phase at time "T" in which Alice commits an signs the encrypted statement 
 - the reveal phase at time "T+1" in which Alice reveals the statement and the encryption-key
+
 Alice can now proof she had knowledge/posession of S at time T by regenerating the hash initially commited
 
 ## How is it Implemented?
