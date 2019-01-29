@@ -1,5 +1,5 @@
 # IOTA-Commit-Reveal
-Python Implementation of the Commit Reveal Scheme Using IOTA 
+Python Implementation of the Commit Reveal Scheme Using IOTA Transactions
 
 
 ## What is Commit Reveal?
